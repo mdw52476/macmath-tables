@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MacMath Tables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fff8ec;
+    --ink: #2b2140;
+    --ink-soft: #6b6283;
+    --panel: #ffffff;
+    --line: #efe4d2;
+    --add: #22b35e;
+    --sub: #ff7a1a;
+    --mul: #8b5cf6;
+    --div: #0ea5e9;
+    --accent: var(--mul);
+    --c1: #ff4d8d; --c2: #ff8a1f; --c3: #ffc21a; --c4: #33c46b;
+    --c5: #14b8a6; --c6: #3b82f6; --c7: #8b5cf6; --c8: #ec4899;
+    --shadow: 0 4px 0 rgba(43,33,64,.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Fredoka", system-ui, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 12%, #ffe1ef 0 120px, transparent 121px),
+      radial-gradient(circle at 92% 30%, #dff4ff 0 160px, transparent 161px),
+      radial-gradient(circle at 15% 85%, #e6fbe9 0 140px, transparent 141px),
+      radial-gradient(circle at 88% 90%, #f0e8ff 0 130px, transparent 131px),
+      var(--bg);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  body[data-op="add"] { --accent: var(--add); }
+  body[data-op="sub"] { --accent: var(--sub); }
+  body[data-op="mul"] { --accent: var(--mul); }
+  body[data-op="div"] { --accent: var(--div); }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 0 16px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+  .logo-mark {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+    width: 44px; height: 44px; transform: rotate(-6deg);
+  }
+  .logo-mark span {
+    display: grid; place-items: center; border-radius: 6px; color: #fff;
+    font-weight: 700; font-size: 14px; line-height: 1;
+  }
+  .logo-mark span:nth-child(1) { background: var(--add); }
+  .logo-mark span:nth-child(2) { background: var(--sub); }
+  .logo-mark span:nth-child(3) { background: var(--mul); }
+  .logo-mark span:nth-child(4) { background: var(--div); }
+  .logo h1 { margin: 0; font-size: clamp(22px, 4vw, 30px); font-weight: 700; letter-spacing: .3px; }
+  .logo h1 b:nth-child(1) { color: var(--c1); }
+  .logo h1 b:nth-child(2) { color: var(--c6); }
+
+  .cog {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
+    display: grid; place-items: center; transition: transform .4s ease;
+  }
+  .cog:hover { transform: rotate(90deg); }
+  .cog:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .cog svg { width: 26px; height: 26px; }
+
+  /* ---------- Operation nav ---------- */
+  nav.ops {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin-bottom: 18px;
+  }
+  .op-btn {
+    --c: var(--ink-soft);
+    font: inherit; cursor: pointer; border: 3px solid transparent;
+    background: var(--panel); color: var(--ink);
+    border-radius: 20px; padding: 12px 8px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    box-shadow: var(--shadow); transition: transform .15s, background .2s, color .2s;
+  }
+  .op-btn .sym {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--c); color: #fff; font-size: 34px; font-weight: 700; line-height: 1;
+  }
+  .op-btn .lbl { font-weight: 600; font-size: 15px; }
+  .op-btn:hover { transform: translateY(-3px); }
+  .op-btn:focus-visible { outline: 3px solid var(--c); outline-offset: 2px; }
+  .op-btn[data-op="add"] { --c: var(--add); }
+  .op-btn[data-op="sub"] { --c: var(--sub); }
+  .op-btn[data-op="mul"] { --c: var(--mul); }
+  .op-btn[data-op="div"] { --c: var(--div); }
+  .op-btn[aria-pressed="true"] { background: var(--c); color: #fff; border-color: rgba(255,255,255,.6); }
+  .op-btn[aria-pressed="true"] .sym { background: #fff; color: var(--c); }
+
+  /* ---------- Number picker ---------- */
+  .picker {
+    background: var(--panel); border-radius: 22px; padding: 14px 16px 16px;
+    box-shadow: var(--shadow); margin-bottom: 22px;
+  }
+  .picker-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .picker-head h2 { margin: 0; font-size: 17px; font-weight: 600; color: var(--ink-soft); }
+  .custom { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--ink-soft); }
+  .custom input {
+    font: inherit; width: 84px; padding: 6px 10px; border-radius: 12px;
+    border: 2px solid var(--line); color: var(--ink); background: #fff;
+  }
+  .custom input:focus { outline: none; border-color: var(--accent); }
+  .nums { display: flex; flex-wrap: wrap; gap: 8px; }
+  .num {
+    --c: var(--c1);
+    font: inherit; font-weight: 700; font-size: 20px; cursor: pointer;
+    width: 52px; height: 52px; border-radius: 16px;
+    border: 3px solid var(--c); background: #fff; color: var(--c);
+    transition: transform .12s, background .15s, color .15s;
+  }
+  .num:hover { transform: scale(1.08); }
+  .num:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .num[aria-pressed="true"] { background: var(--c); color: #fff; transform: scale(1.1); box-shadow: 0 4px 10px rgba(0,0,0,.18); }
+
+  /* ---------- Table ---------- */
+  .table-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .table-head h2 { margin: 0; font-size: clamp(26px, 5vw, 38px); font-weight: 700; line-height: 1.1; }
+  .table-head h2 .big { color: var(--accent); }
+  .table-head p { margin: 4px 0 0; color: var(--ink-soft); }
+  .reveal-all {
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 999px;
+    padding: 8px 16px; background: var(--accent); color: #fff; box-shadow: var(--shadow);
+  }
+
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+  .card {
+    --c: var(--c1);
+    position: relative; overflow: hidden;
+    background: #fff; border-radius: 18px; padding: 14px 16px;
+    border-left: 10px solid var(--c);
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 24px; font-weight: 600;
+    animation: pop .35s both;
+  }
+  .card .eq { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .card .eq .o { color: var(--c); margin: 0 4px; }
+  .card .ans {
+    min-width: 58px; padding: 4px 12px; border-radius: 12px; text-align: center;
+    background: var(--c); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums;
+    border: 0; font: inherit; font-weight: 700;
+  }
+  .card .ans.hidden {
+    position: relative; cursor: pointer; color: transparent;
+    background: repeating-linear-gradient(45deg, #f1ebf9 0 6px, #e7defa 6px 12px);
+  }
+  .card .ans.hidden::after { content: "?"; color: var(--c); position: absolute; inset: 0; display: grid; place-items: center; }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(8px) scale(.97); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
+    .cog, .op-btn, .num { transition: none; }
+  }
+
+  /* ---------- Pager ---------- */
+  .pager {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 22px; flex-wrap: wrap;
+  }
+  .pager button {
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 999px;
+    padding: 10px 20px; background: var(--accent); color: #fff; box-shadow: var(--shadow);
+  }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  .pager .info { font-weight: 600; color: var(--ink-soft); min-width: 150px; text-align: center; }
+
+  /* ---------- Settings dialog ---------- */
+  dialog {
+    border: 0; border-radius: 24px; padding: 0; width: min(440px, calc(100% - 32px));
+    color: var(--ink); background: var(--panel);
+    box-shadow: 0 20px 60px rgba(43,33,64,.3);
+  }
+  dialog::backdrop { background: rgba(43,33,64,.45); }
+  .dlg-head {
+    padding: 16px 20px; color: #fff;
+    background: linear-gradient(90deg, var(--add), var(--sub), var(--mul), var(--div));
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dlg-head h3 { margin: 0; font-size: 22px; }
+  .dlg-close { font: inherit; font-size: 26px; line-height: 1; border: 0; background: transparent; color: #fff; cursor: pointer; }
+  .dlg-body { padding: 18px 20px 22px; display: grid; gap: 18px; }
+  .field-label { font-weight: 600; margin-bottom: 8px; display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-weight: 600; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px; border: 2px solid var(--line);
+    background: #fff; color: var(--ink);
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .toggle small { display: block; color: var(--ink-soft); font-weight: 400; }
+  .switch { position: relative; width: 52px; height: 30px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch span {
+    position: absolute; inset: 0; border-radius: 999px; background: #ddd3ea; cursor: pointer; transition: background .2s;
+  }
+  .switch span::before {
+    content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px;
+    border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span::before { transform: translateX(22px); }
+  .switch input:focus-visible + span { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    nav.ops { gap: 8px; }
+    .op-btn { padding: 10px 4px 8px; border-radius: 16px; }
+    .op-btn .sym { width: 42px; height: 42px; font-size: 28px; }
+    .op-btn .lbl { font-size: 12px; }
+    .num { width: 44px; height: 44px; font-size: 18px; border-radius: 13px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .card { font-size: 20px; padding: 12px; border-left-width: 8px; }
+    .card .ans { min-width: 48px; padding: 3px 8px; }
+  }
+</style>
+</head>
+<body data-op="mul">
+<div class="wrap">
+  <header>
+    <a class="logo" href="#" aria-label="MacMath Tables home">
+      <div class="logo-mark" aria-hidden="true"><span>+</span><span>−</span><span>×</span><span>÷</span></div>
+      <h1><b>MacMath</b> <b>Tables</b></h1>
+    </a>
+    <button class="cog" id="openSettings" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </header>
+
+  <nav class="ops" aria-label="Choose an operation">
+    <button class="op-btn" data-op="add"><span class="sym">+</span><span class="lbl">Addition</span></button>
+    <button class="op-btn" data-op="sub"><span class="sym">−</span><span class="lbl">Subtraction</span></button>
+    <button class="op-btn" data-op="mul"><span class="sym">×</span><span class="lbl">Multiplication</span></button>
+    <button class="op-btn" data-op="div"><span class="sym">÷</span><span class="lbl">Division</span></button>
+  </nav>
+
+  <section class="picker" aria-labelledby="pickTitle">
+    <div class="picker-head">
+      <h2 id="pickTitle">Pick a number</h2>
+      <label class="custom">or type one:
+        <input id="customNum" type="number" min="1" max="9999" inputmode="numeric" placeholder="e.g. 37">
+      </label>
+    </div>
+    <div class="nums" id="nums"></div>
+  </section>
+
+  <section aria-live="polite">
+    <div class="table-head">
+      <div>
+        <h2 id="tableTitle"></h2>
+        <p id="tableSub"></p>
+      </div>
+      <button class="reveal-all" id="revealAll" hidden>Show all answers</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <div class="pager">
+    <button id="prev">← Prev</button>
+    <span class="info" id="pageInfo"></span>
+    <button id="next">Next →</button>
+  </div>
+</div>
+
+<dialog id="settings" aria-labelledby="settingsTitle">
+  <div class="dlg-head">
+    <h3 id="settingsTitle">Settings</h3>
+    <button class="dlg-close" id="closeSettings" aria-label="Close settings">×</button>
+  </div>
+  <div class="dlg-body">
+    <div>
+      <span class="field-label">Facts per page</span>
+      <div class="chips" id="perPageChips"></div>
+    </div>
+    <div>
+      <span class="field-label">Number buttons to show</span>
+      <div class="chips" id="rangeChips"></div>
+    </div>
+    <div class="toggle">
+      <div><strong>Start at 0</strong><small>Begin each table with the zero fact</small></div>
+      <label class="switch"><input type="checkbox" id="startZero"><span></span></label>
+    </div>
+    <div class="toggle">
+      <div><strong>Quiz mode</strong><small>Hide answers — tap a card to reveal</small></div>
+      <label class="switch"><input type="checkbox" id="quiz"><span></span></label>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const OPS = {
+    add: { sym: "+", name: "Addition",       title: n => `Adding <span class="big">${n}</span>`,
+           sub: n => `Add ${n} to every number.`,
+           fact: (n, i) => [i, n, i + n] },
+    sub: { sym: "−", name: "Subtraction",    title: n => `Subtracting <span class="big">${n}</span>`,
+           sub: n => `Take ${n} away from every number.`,
+           fact: (n, i) => [i + n, n, i] },
+    mul: { sym: "×", name: "Multiplication", title: n => `Multiples of <span class="big">${n}</span>`,
+           sub: n => `The ${n} times table.`,
+           fact: (n, i) => [n, i, n * i] },
+    div: { sym: "÷", name: "Division",       title: n => `Dividing by <span class="big">${n}</span>`,
+           sub: n => `Share every multiple of ${n} into ${n} equal groups.`,
+           fact: (n, i) => [n * i, n, i] },
+  };
+  const PER_PAGE = [10, 20, 30, 40, 50, 100];
+  const RANGES = [10, 12, 15, 20, 25];
+  const COLORS = 8;
+  const MAX_NUM = 9999;
+
+  const defaults = { op: "mul", num: 6, page: 1, perPage: 10, range: 12, startZero: false, quiz: false };
+  const state = { ...defaults };
+
+  // Per-viewer preferences (best effort; page still works without storage)
+  try {
+    const saved = JSON.parse(localStorage.getItem("macmath-settings") || "{}");
+    for (const k of ["perPage", "range", "startZero", "quiz"]) if (k in saved) state[k] = saved[k];
+  } catch {}
+  const saveSettings = () => {
+    try {
+      localStorage.setItem("macmath-settings", JSON.stringify({
+        perPage: state.perPage, range: state.range, startZero: state.startZero, quiz: state.quiz,
+      }));
+    } catch {}
+  };
+
+  // URL hash keeps op / number / page shareable, e.g. #mul/6/2
+  const readHash = () => {
+    const [op, num, page] = location.hash.replace(/^#\/?/, "").split("/");
+    if (OPS[op]) state.op = op;
+    const n = parseInt(num, 10);
+    if (n >= 1 && n <= MAX_NUM) state.num = n;
+    const p = parseInt(page, 10);
+    state.page = p >= 1 ? p : 1;
+  };
+  const writeHash = () => {
+    const h = `#${state.op}/${state.num}` + (state.page > 1 ? `/${state.page}` : "");
+    if (location.hash !== h) history.replaceState(null, "", h);
+  };
+
+  const $ = id => document.getElementById(id);
+  const color = i => `var(--c${(i % COLORS) + 1})`;
+
+  function renderOps() {
+    document.body.dataset.op = state.op;
+    document.querySelectorAll(".op-btn").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.op === state.op)));
+  }
+
+  function renderNums() {
+    const box = $("nums");
+    box.innerHTML = "";
+    for (let n = 1; n <= state.range; n++) {
+      const b = document.createElement("button");
+      b.className = "num";
+      b.textContent = n;
+      b.style.setProperty("--c", color(n - 1));
+      b.setAttribute("aria-pressed", String(n === state.num));
+      b.addEventListener("click", () => { state.num = n; state.page = 1; $("customNum").value = ""; update(); });
+      box.appendChild(b);
+    }
+    if (state.num > state.range) $("customNum").value = state.num;
+  }
+
+  function renderTable() {
+    const op = OPS[state.op];
+    const n = state.num;
+    const first = state.startZero ? 0 : 1;
+    const startI = first + (state.page - 1) * state.perPage;
+
+    $("tableTitle").innerHTML = op.title(n);
+    $("tableSub").textContent = op.sub(n);
+
+    const grid = $("grid");
+    grid.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    for (let k = 0; k < state.perPage; k++) {
+      const i = startI + k;
+      const [a, b, ans] = op.fact(n, i);
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.setProperty("--c", color(i));
+      card.style.animationDelay = `${Math.min(k, 30) * 18}ms`;
+      card.innerHTML = `<span class="eq">${a.toLocaleString()}<span class="o">${op.sym}</span>${b.toLocaleString()}<span class="o">=</span></span>`;
+      const ansEl = document.createElement(state.quiz ? "button" : "span");
+      ansEl.className = "ans" + (state.quiz ? " hidden" : "");
+      ansEl.textContent = ans.toLocaleString();
+      if (state.quiz) {
+        ansEl.setAttribute("aria-label", "Reveal answer");
+        ansEl.addEventListener("click", () => { ansEl.classList.remove("hidden"); ansEl.removeAttribute("aria-label"); });
+      }
+      card.appendChild(ansEl);
+      frag.appendChild(card);
+    }
+    grid.appendChild(frag);
+
+    $("revealAll").hidden = !state.quiz;
+    const endI = startI + state.perPage - 1;
+    $("pageInfo").textContent = `Page ${state.page} · facts ${startI}–${endI}`;
+    $("prev").disabled = state.page <= 1;
+  }
+
+  function renderSettings() {
+    const mk = (box, values, key, suffix = "") => {
+      box.innerHTML = "";
+      values.forEach(v => {
+        const c = document.createElement("button");
+        c.className = "chip";
+        c.textContent = v + suffix;
+        c.setAttribute("aria-pressed", String(state[key] === v));
+        c.addEventListener("click", () => {
+          state[key] = v;
+          if (key === "perPage") state.page = 1;
+          saveSettings(); renderSettings(); update();
+        });
+        box.appendChild(c);
+      });
+    };
+    mk($("perPageChips"), PER_PAGE, "perPage");
+    mk($("rangeChips"), RANGES, "range", "");
+    $("rangeChips").querySelectorAll(".chip").forEach((c, i) => c.textContent = `1–${RANGES[i]}`);
+    $("startZero").checked = state.startZero;
+    $("quiz").checked = state.quiz;
+  }
+
+  function update() {
+    writeHash();
+    renderOps();
+    renderNums();
+    renderTable();
+  }
+
+  // ---- Events ----
+  document.querySelectorAll(".op-btn").forEach(b =>
+    b.addEventListener("click", () => { state.op = b.dataset.op; state.page = 1; update(); }));
+
+  $("customNum").addEventListener("input", e => {
+    const n = parseInt(e.target.value, 10);
+    if (n >= 1 && n <= MAX_NUM) { state.num = n; state.page = 1; writeHash(); renderNums(); renderTable(); }
+  });
+
+  $("prev").addEventListener("click", () => { if (state.page > 1) { state.page--; update(); } });
+  $("next").addEventListener("click", () => { state.page++; update(); });
+  $("revealAll").addEventListener("click", () =>
+    document.querySelectorAll(".ans.hidden").forEach(a => a.classList.remove("hidden")));
+
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input") || $("settings").open) return;
+    if (e.key === "ArrowRight") $("next").click();
+    if (e.key === "ArrowLeft") $("prev").click();
+  });
+
+  const dlg = $("settings");
+  $("openSettings").addEventListener("click", () => { renderSettings(); dlg.showModal(); });
+  $("closeSettings").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  $("startZero").addEventListener("change", e => { state.startZero = e.target.checked; state.page = 1; saveSettings(); update(); });
+  $("quiz").addEventListener("change", e => { state.quiz = e.target.checked; saveSettings(); update(); });
+
+  window.addEventListener("hashchange", () => { readHash(); update(); });
+
+  readHash();
+  update();
+})();
+</script>
+</body>
+</html>
