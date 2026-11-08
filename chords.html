@@ -1173,10 +1173,18 @@ $('#zoomFit').addEventListener('click', zoomFit);
 $('#copyBtn').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(sheetText()); toast('Chord sheet copied'); } catch { toast("Couldn't access the clipboard"); }
 });
-$('#dlBtn').addEventListener('click', () => {
+$('#dlBtn').addEventListener('click', async () => {
+  const filename = state.fileName.replace(/\.[^.]+$/, '') + ' - chords.txt';
+  // Inside the claude.ai artifact viewer, files must be offered through the downloads capability.
+  const dl = window.claude && window.claude.use ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename, data: sheetText() }); toast('Chord sheet saved'); }
+    catch (e) { if (e && e.code !== 'declined') toast("Couldn't save the file here"); }
+    return;
+  }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([sheetText()], { type: 'text/plain' }));
-  a.download = state.fileName.replace(/\.[^.]+$/, '') + ' - chords.txt';
+  a.download = filename;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 document.addEventListener('keydown', e => {
